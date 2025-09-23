@@ -1,0 +1,183 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+if game:GetService("CoreGui"):FindFirstChild("LoadingUI") then
+    game:GetService("CoreGui"):FindFirstChild("LoadingUI"):Destroy()
+end
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "LoadingUI"
+screenGui.Parent = game:GetService("CoreGui")
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(1, 0, 1, 0)
+mainFrame.Position = UDim2.new(0, 0, 0, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+mainFrame.ClipsDescendants = true
+
+local stars = {}
+local starTweens = {} 
+
+local function createStar()
+    local sizeOffset = math.random(2, 4)
+    local star = Instance.new("Frame")
+    star.Size = UDim2.new(0, sizeOffset, 0, sizeOffset)
+    star.Position = UDim2.new(math.random(), 0, math.random(), 0)
+    star.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    star.BackgroundTransparency = 0.5
+    star.BorderSizePixel = 0
+    star.AnchorPoint = Vector2.new(0.5, 0.5)
+    star.Parent = mainFrame
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, sizeOffset/2)
+    corner.Parent = star
+
+    local tweenInfo = TweenInfo.new(math.random(2, 4), Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+    local tween = TweenService:Create(star, tweenInfo, {BackgroundTransparency = 0.3})
+    tween:Play()
+
+    table.insert(stars, star)
+    table.insert(starTweens, tween)
+end
+
+for i = 1, 100 do
+    createStar()
+end
+
+local title = Instance.new("ImageLabel")
+title.Size = UDim2.new(0.3, 0, 0.48, 0)
+title.Position = UDim2.new(0.35, 0, 0.1, 0)
+title.BackgroundTransparency = 1
+title.Image = "rbxassetid://99463203504067"
+title.ScaleType = Enum.ScaleType.Fit
+title.Parent = mainFrame
+
+local progressBarBG = Instance.new("Frame")
+progressBarBG.Size = UDim2.new(0.6, 0, 0.05, 0)
+progressBarBG.Position = UDim2.new(0.2, 0, 0.45, 0)
+progressBarBG.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+progressBarBG.BorderSizePixel = 0
+progressBarBG.Parent = mainFrame
+
+local progressCorner = Instance.new("UICorner")
+progressCorner.CornerRadius = UDim.new(0, 8)
+progressCorner.Parent = progressBarBG
+
+local progressBar = Instance.new("Frame")
+progressBar.Size = UDim2.new(0, 0, 1, 0)
+progressBar.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+progressBar.BorderSizePixel = 0
+progressBar.Parent = progressBarBG
+
+local progressCorner2 = Instance.new("UICorner")
+progressCorner2.CornerRadius = UDim.new(0, 8)
+progressCorner2.Parent = progressBar
+
+local percentLabel = Instance.new("TextLabel")
+percentLabel.Size = UDim2.new(1, 0, 1, 0)
+percentLabel.Position = UDim2.new(0, 0, 0, 0)
+percentLabel.BackgroundTransparency = 1
+percentLabel.Text = "0%"
+percentLabel.Font = Enum.Font.GothamBold
+percentLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+percentLabel.TextScaled = true
+percentLabel.Parent = progressBarBG
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, 0, 0.1, 0)
+statusLabel.Position = UDim2.new(0, 0, 0.55, 0)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = ""
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+statusLabel.TextScaled = true
+statusLabel.Parent = mainFrame
+
+local loadingSteps = {
+    {text = "Inicializando sistema...", duration = 0.5},
+    {text = "Carregando LocalPlayer...", duration = 0.7},
+    {text = "Conectando com servicos...", duration = 0.5},
+    {text = "Carregando modulos...", duration = 0.8},
+    {text = "Configurando interface...", duration = 0.7},
+    {text = "Carregando Tabs...", duration = 0.6},
+    {text = "Aplicando configuracoes...", duration = 0.5},
+    {text = "Verificando permissoes...", duration = 0.5},
+    {text = "Carregando recursos...", duration = 0.7},
+    {text = "Finalizando...", duration = 0.5}
+}
+
+local percentConnection = nil
+
+local function animatePercent(from, to, duration)
+    if percentConnection then
+        percentConnection:Disconnect()
+    end
+    local start = tick()
+    percentConnection = RunService.Heartbeat:Connect(function()
+        local progress = math.clamp((tick() - start) / duration, 0, 1)
+        local current = math.floor(from + (to - from) * progress)
+        percentLabel.Text = current .. "%"
+        if progress >= 1 then
+            percentConnection:Disconnect()
+            percentConnection = nil
+        end
+    end)
+end
+
+local function glowText(object, isImage)
+    if isImage then
+        local tween = TweenService:Create(object, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {ImageTransparency = 0.1})
+        tween:Play()
+    else
+        local tween = TweenService:Create(object, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {TextTransparency = 0.1})
+        tween:Play()
+    end
+end
+
+glowText(title, true)
+glowText(percentLabel, false)
+glowText(statusLabel, false)
+
+task.spawn(function()
+    local currentProgress = 0
+    for i, step in ipairs(loadingSteps) do
+        statusLabel.Text = step.text
+        local targetProgress = i / #loadingSteps
+        local tween = TweenService:Create(progressBar, TweenInfo.new(step.duration, Enum.EasingStyle.Linear), {Size = UDim2.new(targetProgress, 0, 1, 0)})
+        tween:Play()
+        local targetPercent = math.floor(targetProgress * 100)
+        animatePercent(currentProgress * 100, targetPercent, step.duration)
+        currentProgress = targetProgress
+        tween.Completed:Wait()
+    end
+    task.wait(0.3)
+    if percentConnection then
+        percentConnection:Disconnect()
+        percentConnection = nil
+    end
+    for _, tween in ipairs(starTweens) do
+        tween:Cancel()
+    end
+    TweenService:Create(mainFrame, TweenInfo.new(0.8), {BackgroundTransparency = 1}):Play()
+    TweenService:Create(title, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {ImageTransparency = 1}):Play()
+    TweenService:Create(statusLabel, TweenInfo.new(0.8), {TextTransparency = 1}):Play()
+    TweenService:Create(percentLabel, TweenInfo.new(0.8), {TextTransparency = 1}):Play()
+    TweenService:Create(progressBarBG, TweenInfo.new(0.8), {BackgroundTransparency = 1}):Play()
+    TweenService:Create(progressBar, TweenInfo.new(0.8), {BackgroundTransparency = 1}):Play()
+    for _, star in ipairs(stars) do
+        TweenService:Create(star, TweenInfo.new(0.8), {BackgroundTransparency = 1}):Play()
+    end
+    task.wait(1)
+    if screenGui and screenGui.Parent then
+        screenGui:Destroy()
+    end
+    -- Aqui carrega o Fire V3.0.0
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/olliverwillianvale-lgtm/Fire-V3.0.0/refs/heads/main/obfuscated_script-1758660496907.lua.txt"))()
+end)
