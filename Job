@@ -1,0 +1,191 @@
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+
+local LocalPlayer = Players.LocalPlayer
+
+local function parseJoinString(str)
+    local placeId, jobId = string.match(str, "^(%d+)|([%w%-]+)$")
+    return tonumber(placeId), jobId
+end
+
+local function teleportToJoinString(str)
+    local placeId, jobId = parseJoinString(str)
+    if placeId and jobId then
+        local ok, err = pcall(function()
+            TeleportService:TeleportToPlaceInstance(placeId, jobId, LocalPlayer)
+        end)
+        if not ok then
+            statusLabel.Text = "Erro ao teleportar: "..tostring(err)
+            statusLabel.TextColor3 = Color3.fromRGB(255,80,80)
+        else
+            statusLabel.Text = "Pedido de teleport enviado..."
+            statusLabel.TextColor3 = Color3.fromRGB(50,255,50)
+        end
+    else
+        statusLabel.Text = "JOIN STRING inválida!"
+        statusLabel.TextColor3 = Color3.fromRGB(255,80,80)
+    end
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = CoreGui
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.Name = "FireHubUI"
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 360, 0, 220)
+MainFrame.Position = UDim2.new(0.5, -180, 0.5, -110)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+local UICorner = Instance.new("UICorner", MainFrame)
+UICorner.CornerRadius = UDim.new(0, 12)
+
+local UIStroke = Instance.new("UIStroke", MainFrame)
+UIStroke.Thickness = 2
+UIStroke.Color = Color3.fromRGB(255, 255, 255)
+
+local Title = Instance.new("TextLabel")
+Title.Parent = MainFrame
+Title.Size = UDim2.new(1, -80, 0, 40)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "🔥 Fire Hub"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 20
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+local MinButton = Instance.new("TextButton")
+MinButton.Parent = MainFrame
+MinButton.Size = UDim2.new(0, 30, 0, 30)
+MinButton.Position = UDim2.new(1, -70, 0, 5)
+MinButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+MinButton.Text = "–"
+MinButton.Font = Enum.Font.GothamBold
+MinButton.TextSize = 20
+MinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+local minCorner = Instance.new("UICorner", MinButton)
+minCorner.CornerRadius = UDim.new(0, 8)
+
+local CloseButton = Instance.new("TextButton")
+CloseButton.Parent = MainFrame
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -35, 0, 5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+CloseButton.Text = "X"
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 20
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+local closeCorner = Instance.new("UICorner", CloseButton)
+closeCorner.CornerRadius = UDim.new(0, 8)
+
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+local TextBox = Instance.new("TextBox")
+TextBox.Parent = MainFrame
+TextBox.PlaceholderText = "Coloque o código aqui !"
+TextBox.Text = ""
+TextBox.Size = UDim2.new(1, -40, 0, 40)
+TextBox.Position = UDim2.new(0, 20, 0, 60)
+TextBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextBox.Font = Enum.Font.Gotham
+TextBox.TextSize = 14
+
+local boxCorner = Instance.new("UICorner", TextBox)
+boxCorner.CornerRadius = UDim.new(0, 8)
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Parent = MainFrame
+statusLabel.Size = UDim2.new(1, -40, 0, 20)
+statusLabel.Position = UDim2.new(0, 20, 0, 110)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "Aguardando JOIN STRING..."
+statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 14
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local Button = Instance.new("TextButton")
+Button.Parent = MainFrame
+Button.Text = "🚀 Teleportar"
+Button.Size = UDim2.new(0, 160, 0, 45)
+Button.Position = UDim2.new(0.5, -80, 0, 140)
+Button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Button.TextColor3 = Color3.fromRGB(0, 0, 0)
+Button.Font = Enum.Font.GothamBold
+Button.TextSize = 16
+
+local btnCorner = Instance.new("UICorner", Button)
+btnCorner.CornerRadius = UDim.new(0, 8)
+
+Button.MouseEnter:Connect(function()
+    Button.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+end)
+Button.MouseLeave:Connect(function()
+    Button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+end)
+
+Button.MouseButton1Click:Connect(function()
+    teleportToJoinString(TextBox.Text)
+end)
+
+local ClearButton = Instance.new("TextButton")
+ClearButton.Parent = MainFrame
+ClearButton.Text = "🗑 Limpar"
+ClearButton.Size = UDim2.new(0, 100, 0, 35)
+ClearButton.Position = UDim2.new(0, 20, 0, 170)
+ClearButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ClearButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ClearButton.Font = Enum.Font.Gotham
+ClearButton.TextSize = 14
+
+local clearCorner = Instance.new("UICorner", ClearButton)
+clearCorner.CornerRadius = UDim.new(0, 8)
+
+ClearButton.MouseEnter:Connect(function()
+    ClearButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+end)
+ClearButton.MouseLeave:Connect(function()
+    ClearButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+end)
+
+ClearButton.MouseButton1Click:Connect(function()
+    TextBox.Text = ""
+    statusLabel.Text = "Aguardando JOIN STRING..."
+    statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+end)
+
+local minimized = false
+MinButton.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        TextBox.Visible = false
+        Button.Visible = false
+        ClearButton.Visible = false
+        statusLabel.Visible = false
+        TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+            Size = UDim2.new(0, 360, 0, 50)
+        }):Play()
+    else
+        TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+            Size = UDim2.new(0, 360, 0, 220)
+        }):Play()
+        task.delay(0.3, function()
+            TextBox.Visible = true
+            Button.Visible = true
+            ClearButton.Visible = true
+            statusLabel.Visible = true
+        end)
+    end
+end)
