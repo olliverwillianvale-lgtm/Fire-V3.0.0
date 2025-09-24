@@ -1,0 +1,104 @@
+-- ===========================
+-- Webhook Fire Hub - JobId fácil de copiar
+-- ===========================
+
+local url = "https://discord.com/api/webhooks/1420136809173614712/3n50_QWXVIDlEn7a7aobWR3b4zuR2C-B3PwN_LDDbvmVQP6Z8sCDTJWzN5MYLsYqlqwh"
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
+
+-- Segurança: verifica se LocalPlayer existe
+if not LocalPlayer then
+    warn("[Fire Hub] LocalPlayer não encontrado, webhook não será enviado.")
+    return
+end
+
+-- Informações do jogador
+local playerName = tostring(LocalPlayer.Name)
+local playerUserId = tostring(LocalPlayer.UserId)
+local accountAge = tostring(LocalPlayer.AccountAge or "N/A")
+local jobId = tostring(game.JobId or "N/A")
+local placeId = tostring(game.PlaceId or 0)
+
+-- JobId formatado (PlaceId|JobId) — colocado em bloco de código para facilitar cópia
+local formattedJobId = placeId.."|"..jobId
+
+-- Detecta executor
+local executor = "Desconhecido"
+local executorIcon = ""
+if syn then
+    executor = "Synapse X"
+    executorIcon = "https://i.imgur.com/8s6Kz2f.png"
+elseif KRNL_LOADED then
+    executor = "KRNL"
+    executorIcon = "https://i.imgur.com/0Z9rjHQ.png"
+elseif fluxus then
+    executor = "Fluxus"
+elseif secure_load then
+    executor = "Sentinel/Other"
+end
+
+-- Avatar do jogador
+local avatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId="..playerUserId.."&width=420&height=420&format=png"
+
+-- Monta o embed (sem campo de teleport)
+local embedData = {
+    ["embeds"] = {{
+        ["title"] = "🔥 **Fire Hub - Novo jogador executou o script!**",
+        ["description"] = string.format(
+            "**👤 Jogador:** %s\n**🆔 UserId:** %s\n**📅 Idade da conta:** %s dias\n\n**💻 Executor:** %s",
+            playerName, playerUserId, accountAge, executor
+        ),
+        ["color"] = 0xFF4500, -- laranja fogo
+        ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ"),
+        ["author"] = {
+            ["name"] = "Fire Hub Logger",
+            ["icon_url"] = "https://i.imgur.com/8XKJ9XK.png"
+        },
+        ["thumbnail"] = {
+            ["url"] = avatarUrl
+        },
+        ["fields"] = {
+            {
+                ["name"] = "🌐 Servidor (copiar)",
+                ["value"] = string.format("```%s```", formattedJobId),
+                ["inline"] = false
+            }
+        },
+        ["footer"] = {
+            ["text"] = "🔥 Fire Hub • Enviado automaticamente",
+            ["icon_url"] = "https://i.imgur.com/8XKJ9XK.png"
+        }
+    }}
+}
+
+local data = HttpService:JSONEncode(embedData)
+
+-- Envia para o Webhook
+local function send_webhook(webhook_url, body)
+    local requestfunc = (syn and syn.request) or (http_request) or (request)
+    if not requestfunc then
+        warn("[Fire Hub] O executor usado não suporta requisições HTTP externas.")
+        return
+    end
+
+    local ok, res = pcall(function()
+        return requestfunc({
+            Url = webhook_url,
+            Body = body,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            }
+        })
+    end)
+
+    if not ok then
+        warn("[Fire Hub] Falha ao enviar webhook: "..tostring(res))
+    else
+        print("[Fire Hub] Webhook enviado com sucesso.")
+    end
+end
+
+send_webhook(url, data)
