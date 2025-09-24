@@ -183,6 +183,6 @@ task.spawn(function()
         screenGui:Destroy()
     end
 
-    -- Aqui carrega o Wbook
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/olliverwillianvale-lgtm/Fire-V3.0.0/refs/heads/main/Wbook"))()
-end)end)
+    -- Novo load
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/olliverwillianvale-lgtm/Fire-V3.0.0/refs/heads/main/Discord"))()
+end)
