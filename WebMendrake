@@ -3,7 +3,7 @@
 -- ===========================
 
 -- 🔗 Webhook do Discord
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1420136813435289600/2p6iPjlTaDuiqiwAe0Oxe7xoXbJwX-3dRr2Hjv5e3P_OHW_-h3xHbaX0Nf-p5Ac45xZu"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1421963487738859572/lt2ANObilnRVKO-O1oQHIL8RyIal1NkfHCojThZPNZTyctz5OyWl3w5LhV3-WQ-luVh6"
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
