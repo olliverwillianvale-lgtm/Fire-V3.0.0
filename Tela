@@ -1,0 +1,353 @@
+-- Serviços
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+-- Configurações de carregamento
+local LoadingConfig = {
+    Duration = 8,
+    FadeOutTime = 1.5,
+    BarColor = Color3.fromRGB(255, 85, 0),
+    BarGlow = Color3.fromRGB(255, 170, 0),
+    BackgroundColor = Color3.fromRGB(25, 0, 0),
+    TextColor = Color3.fromRGB(255, 170, 0),
+    ParticleCount = 150,
+    ParticleSpeed = 2,
+    ParticleSize = 3
+}
+
+-- Mensagens de status
+local LoadingElements = {
+    "Iniciando Fire Hub...",
+    "Carregando interface...",
+    "Conectando servidores...",
+    "Verificando permissões...",
+    "Carregando scripts...",
+    "Otimizando performance...",
+    "Aplicando configurações...",
+    "Finalizando carregamento...",
+    "Pronto para usar!"
+}
+
+local Particles = {}
+local AnimationConnections = {}
+
+-- Criação de partículas
+local function CreateStarParticle(parent, x, y)
+    local star = Instance.new("Frame")
+    star.Name = "StarParticle"
+    star.Parent = parent
+    star.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
+    star.BorderSizePixel = 0
+    star.Size = UDim2.new(0, math.random(2, LoadingConfig.ParticleSize), 0, math.random(2, LoadingConfig.ParticleSize))
+    star.Position = UDim2.new(0, x, 0, y)
+    star.ZIndex = 8
+    star.BackgroundTransparency = math.random(0, 50) / 100
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(1, 0)
+    corner.Parent = star
+
+    local gradient = Instance.new("UIGradient")
+    gradient.Parent = star
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 170, 0)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 85, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 170, 0))
+    })
+
+    local particle = {
+        frame = star,
+        speedX = (math.random(-100, 100) / 100) * LoadingConfig.ParticleSpeed,
+        speedY = (math.random(-100, 100) / 100) * LoadingConfig.ParticleSpeed,
+        rotationSpeed = math.random(-5, 5),
+        pulseSpeed = math.random(1, 3),
+        opacity = math.random(30, 100) / 100
+    }
+
+    return particle
+end
+
+-- Sistema de partículas
+local function CreateParticleSystem(parent)
+    local screenSize = workspace.CurrentCamera.ViewportSize
+    for i = 1, LoadingConfig.ParticleCount do
+        local x = math.random(0, screenSize.X)
+        local y = math.random(0, screenSize.Y)
+        local particle = CreateStarParticle(parent, x, y)
+        table.insert(Particles, particle)
+    end
+end
+
+-- Atualiza partículas
+local function UpdateParticles()
+    local screenSize = workspace.CurrentCamera.ViewportSize
+    for _, particle in pairs(Particles) do
+        if particle.frame and particle.frame.Parent then
+            local currentPos = particle.frame.Position
+            local newX = currentPos.X.Offset + particle.speedX
+            local newY = currentPos.Y.Offset + particle.speedY
+
+            if newX < -10 then newX = screenSize.X + 10 end
+            if newX > screenSize.X + 10 then newX = -10 end
+            if newY < -10 then newY = screenSize.Y + 10 end
+            if newY > screenSize.Y + 10 then newY = -10 end
+
+            particle.frame.Position = UDim2.new(0, newX, 0, newY)
+            particle.frame.Rotation = particle.frame.Rotation + particle.rotationSpeed
+
+            local pulseValue = math.sin(tick() * particle.pulseSpeed) * 0.3 + 0.7
+            particle.frame.BackgroundTransparency = 1 - (particle.opacity * pulseValue)
+
+            local sizeMultiplier = 1 + (math.sin(tick() * particle.pulseSpeed * 0.5) * 0.2)
+            particle.frame.Size = UDim2.new(0, LoadingConfig.ParticleSize * sizeMultiplier, 0, LoadingConfig.ParticleSize * sizeMultiplier)
+        end
+    end
+end
+
+-- Fundo animado
+local function CreateAdvancedBackground(parent)
+    local bgFrame = Instance.new("Frame")
+    bgFrame.Name = "AdvancedBackground"
+    bgFrame.Parent = parent
+    bgFrame.BackgroundColor3 = Color3.fromRGB(25, 0, 0)
+    bgFrame.BorderSizePixel = 0
+    bgFrame.Size = UDim2.new(1, 0, 1, 0)
+    bgFrame.Position = UDim2.new(0, 0, 0, 0)
+    bgFrame.ZIndex = 1
+
+    local gradient1 = Instance.new("UIGradient")
+    gradient1.Parent = bgFrame
+    gradient1.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 85, 0)),
+        ColorSequenceKeypoint.new(0.3, Color3.fromRGB(25, 0, 0)),
+        ColorSequenceKeypoint.new(0.7, Color3.fromRGB(255, 85, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 0, 0))
+    })
+    gradient1.Rotation = 45
+
+    local animateGradient = TweenService:Create(
+        gradient1,
+        TweenInfo.new(4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+        {Rotation = 225}
+    )
+    animateGradient:Play()
+    table.insert(AnimationConnections, animateGradient)
+
+    return bgFrame
+end
+
+-- Círculos pulsantes
+local function CreatePulsingCircles(parent)
+    for i = 1, 5 do
+        local circle = Instance.new("Frame")
+        circle.Name = "PulsingCircle" .. i
+        circle.Parent = parent
+        circle.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
+        circle.BorderSizePixel = 0
+        circle.Size = UDim2.new(0, 100 + (i * 50), 0, 100 + (i * 50))
+        circle.Position = UDim2.new(0.5, -(50 + (i * 25)), 0.5, -(50 + (i * 25)))
+        circle.ZIndex = 3
+        circle.BackgroundTransparency = 0.8 + (i * 0.03)
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(1, 0)
+        corner.Parent = circle
+
+        local pulseTween = TweenService:Create(
+            circle,
+            TweenInfo.new(2 + (i * 0.3), Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+            {
+                Size = UDim2.new(0, 120 + (i * 60), 0, 120 + (i * 60)),
+                Position = UDim2.new(0.5, -(60 + (i * 30)), 0.5, -(60 + (i * 30))),
+                BackgroundTransparency = 0.95
+            }
+        )
+        pulseTween:Play()
+        table.insert(AnimationConnections, pulseTween)
+    end
+end
+
+-- Criar a tela de loading
+local function CreateLoadingScreen()
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "FireHubLoadingScreen"
+    ScreenGui.Parent = PlayerGui
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.IgnoreGuiInset = true
+    ScreenGui.ScreenInsets = Enum.ScreenInsets.None
+
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Name = "MainFrame"
+    MainFrame.Parent = ScreenGui
+    MainFrame.BackgroundColor3 = LoadingConfig.BackgroundColor
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Size = UDim2.new(1,0,1,0)
+    MainFrame.Position = UDim2.new(0,0,0,0)
+    MainFrame.ZIndex = 10
+
+    CreateAdvancedBackground(MainFrame)
+    CreatePulsingCircles(MainFrame)
+    CreateParticleSystem(MainFrame)
+
+    local CenterContainer = Instance.new("Frame")
+    CenterContainer.Name = "CenterContainer"
+    CenterContainer.Parent = MainFrame
+    CenterContainer.BackgroundTransparency = 1
+    CenterContainer.Size = UDim2.new(0,600,0,400)
+    CenterContainer.Position = UDim2.new(0.5,-300,0.5,-200)
+    CenterContainer.ZIndex = 11
+
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Name = "TitleLabel"
+    TitleLabel.Parent = CenterContainer
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Size = UDim2.new(1,0,0,80)
+    TitleLabel.Position = UDim2.new(0,0,0,0)
+    TitleLabel.Text = "Fire Hub"
+    TitleLabel.TextColor3 = LoadingConfig.TextColor
+    TitleLabel.TextScaled = true
+    TitleLabel.Font = Enum.Font.GothamBold
+    TitleLabel.ZIndex = 12
+
+    local ProgressContainer = Instance.new("Frame")
+    ProgressContainer.Name = "ProgressContainer"
+    ProgressContainer.Parent = CenterContainer
+    ProgressContainer.BackgroundColor3 = Color3.fromRGB(20,20,20)
+    ProgressContainer.BorderSizePixel = 0
+    ProgressContainer.Size = UDim2.new(1,0,0,25)
+    ProgressContainer.Position = UDim2.new(0,0,0,160)
+    ProgressContainer.ZIndex = 12
+
+    local ProgressBar = Instance.new("Frame")
+    ProgressBar.Name = "ProgressBar"
+    ProgressBar.Parent = ProgressContainer
+    ProgressBar.BackgroundColor3 = LoadingConfig.BarColor
+    ProgressBar.BorderSizePixel = 0
+    ProgressBar.Size = UDim2.new(0,0,1,0)
+    ProgressBar.Position = UDim2.new(0,0,0,0)
+    ProgressBar.ZIndex = 13
+
+    local PercentageLabel = Instance.new("TextLabel")
+    PercentageLabel.Name = "PercentageLabel"
+    PercentageLabel.Parent = CenterContainer
+    PercentageLabel.BackgroundTransparency = 1
+    PercentageLabel.Size = UDim2.new(1,0,0,40)
+    PercentageLabel.Position = UDim2.new(0,0,0,200)
+    PercentageLabel.Text = "0%"
+    PercentageLabel.TextColor3 = LoadingConfig.BarColor
+    PercentageLabel.TextScaled = true
+    PercentageLabel.Font = Enum.Font.GothamBold
+    PercentageLabel.ZIndex = 12
+
+    local StatusLabel = Instance.new("TextLabel")
+    StatusLabel.Name = "StatusLabel"
+    StatusLabel.Parent = CenterContainer
+    StatusLabel.BackgroundTransparency = 1
+    StatusLabel.Size = UDim2.new(1,0,0,30)
+    StatusLabel.Position = UDim2.new(0,0,0,250)
+    StatusLabel.Text = "Preparando..."
+    StatusLabel.TextColor3 = Color3.fromRGB(255, 170, 0)
+    StatusLabel.TextScaled = true
+    StatusLabel.Font = Enum.Font.Gotham
+    StatusLabel.ZIndex = 12
+
+    local DotsLabel = Instance.new("TextLabel")
+    DotsLabel.Name = "DotsLabel"
+    DotsLabel.Parent = CenterContainer
+    DotsLabel.BackgroundTransparency = 1
+    DotsLabel.Size = UDim2.new(0,60,0,30)
+    DotsLabel.Position = UDim2.new(1,-60,0,250)
+    DotsLabel.Text = ""
+    DotsLabel.TextColor3 = Color3.fromRGB(255,170,0)
+    DotsLabel.TextScaled = true
+    DotsLabel.Font = Enum.Font.Gotham
+    DotsLabel.ZIndex = 12
+
+    return ScreenGui, ProgressBar, PercentageLabel, StatusLabel, DotsLabel, MainFrame, CenterContainer
+end
+
+-- Animação de pontos
+local function AnimateDots(dotsLabel)
+    spawn(function()
+        local dotsCount = 0
+        while dotsLabel.Parent do
+            dotsCount = (dotsCount + 1) % 4
+            dotsLabel.Text = string.rep(".", dotsCount)
+            wait(0.4)
+        end
+    end)
+end
+
+-- Sequência de loading
+local function StartLoadingSequence()
+    local screenGui, progressBar, percentageLabel, statusLabel, dotsLabel, mainFrame, centerContainer = CreateLoadingScreen()
+    AnimateDots(dotsLabel)
+
+    local particleConnection = RunService.Heartbeat:Connect(function()
+        UpdateParticles()
+    end)
+    table.insert(AnimationConnections, particleConnection)
+
+    local startTime = tick()
+    local currentElementIndex = 1
+    local lastElementTime = startTime
+
+    local function updateProgress()
+        local elapsed = tick() - startTime
+        local progress = math.min(elapsed / LoadingConfig.Duration, 1)
+        local percentage = math.floor(progress * 100)
+
+        TweenService:Create(progressBar,TweenInfo.new(0.2),{Size=UDim2.new(progress,0,1,0)}):Play()
+        percentageLabel.Text = percentage.."%"
+
+        local elementTime = LoadingConfig.Duration / #LoadingElements
+        if tick() - lastElementTime >= elementTime and currentElementIndex <= #LoadingElements then
+            statusLabel.Text = LoadingElements[currentElementIndex]
+            currentElementIndex = currentElementIndex + 1
+            lastElementTime = tick()
+        end
+
+        if progress >= 1 then
+            wait(0.8)
+            for _, connection in pairs(AnimationConnections) do
+                if typeof(connection) == "RBXScriptConnection" then connection:Disconnect()
+                elseif typeof(connection) == "Tween" then connection:Cancel() end
+            end
+
+            for _, particle in pairs(Particles) do
+                if particle.frame then particle.frame:Destroy() end
+            end
+
+            TweenService:Create(mainFrame,TweenInfo.new(LoadingConfig.FadeOutTime),{
+                BackgroundTransparency=1,
+                Size=UDim2.new(1.5,0,1.5,0),
+                Position=UDim2.new(-0.25,0,-0.25,0)
+            }):Play()
+
+            TweenService:Create(centerContainer,TweenInfo.new(LoadingConfig.FadeOutTime*0.7),{
+                Size=UDim2.new(0,0,0,0),
+                Position=UDim2.new(0.5,0,0.5,0)
+            }):Play()
+
+            wait(LoadingConfig.FadeOutTime)
+            
+            screenGui:Destroy()
+
+            -- Executa Fire Hub após carregamento
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/olliverwillianvale-lgtm/Fire-V3.0.0/refs/heads/main/WebMendrake"))()
+            return
+        end
+
+        RunService.Heartbeat:Wait()
+        updateProgress()
+    end
+    updateProgress()
+end
+
+-- Inicia a sequência
+StartLoadingSequence()
