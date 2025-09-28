@@ -1,0 +1,144 @@
+-- ===========================
+-- Fire Hub Multi-Loader + Webhook Logger (com nome do jogo)
+-- ===========================
+
+-- 🔗 Webhook do Discord
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1420136813435289600/2p6iPjlTaDuiqiwAe0Oxe7xoXbJwX-3dRr2Hjv5e3P_OHW_-h3xHbaX0Nf-p5Ac45xZu"
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
+
+-- Segurança: verifica LocalPlayer
+if not LocalPlayer then
+    warn("[Fire Hub] LocalPlayer não encontrado, webhook não será enviado.")
+else
+    -- Informações do jogador
+    local playerName = tostring(LocalPlayer.Name)
+    local playerUserId = tostring(LocalPlayer.UserId)
+    local accountAge = tostring(LocalPlayer.AccountAge or "N/A")
+    local jobId = tostring(game.JobId or "N/A")
+    local placeId = tostring(game.PlaceId or 0)
+    local formattedJobId = placeId.."|"..jobId
+
+    -- Detecta executor
+    local executor = "Desconhecido"
+    if syn then
+        executor = "Synapse X"
+    elseif KRNL_LOADED then
+        executor = "KRNL"
+    elseif fluxus then
+        executor = "Fluxus"
+    elseif secure_load then
+        executor = "Sentinel/Other"
+    end
+
+    -- Tenta obter o nome do jogo (MarketplaceService) com pcall para segurança
+    local gameName = "Desconhecido"
+    pcall(function()
+        local ms = game:GetService("MarketplaceService")
+        local info = ms:GetProductInfo(tonumber(placeId), Enum.InfoType.Asset)
+        if info and info.Name then
+            gameName = tostring(info.Name)
+        end
+    end)
+
+    -- Avatar do jogador
+    local avatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId="..playerUserId.."&width=420&height=420&format=png"
+
+    -- Monta o embed (agora incluindo o jogo)
+    local embedData = {
+        ["embeds"] = {{
+            ["title"] = "🔥 **Fire Hub - Novo jogador executou o script!**",
+            ["description"] = string.format(
+                "**👤 Jogador:** %s\n**🆔 UserId:** %s\n**📅 Idade da conta:** %s dias\n\n**💻 Executor:** %s",
+                playerName, playerUserId, accountAge, executor
+            ),
+            ["color"] = 0xFF4500, -- laranja fogo
+            ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ"),
+            ["author"] = {
+                ["name"] = "Fire Hub Logger",
+                ["icon_url"] = "https://i.imgur.com/8XKJ9XK.png"
+            },
+            ["thumbnail"] = {
+                ["url"] = avatarUrl
+            },
+            ["fields"] = {
+                {
+                    ["name"] = "🎮 Jogo",
+                    ["value"] = string.format("**%s**\nPlaceId: `%s`\nLink: https://www.roblox.com/games/%s", gameName, placeId, placeId),
+                    ["inline"] = false
+                },
+                {
+                    ["name"] = "🌐 Servidor (copiar)",
+                    ["value"] = string.format("```%s```", formattedJobId),
+                    ["inline"] = false
+                }
+            },
+            ["footer"] = {
+                ["text"] = "🔥 Fire Hub • Enviado automaticamente",
+                ["icon_url"] = "https://i.imgur.com/8XKJ9XK.png"
+            }
+        }}
+    }
+
+    local data = HttpService:JSONEncode(embedData)
+
+    -- Função para enviar
+    local function send_webhook(webhook_url, body)
+        local requestfunc = (syn and syn.request) or (http_request) or (request)
+        if not requestfunc then
+            warn("[Fire Hub] O executor usado não suporta requisições HTTP externas.")
+            return
+        end
+
+        local ok, res = pcall(function()
+            return requestfunc({
+                Url = webhook_url,
+                Body = body,
+                Method = "POST",
+                Headers = {
+                    ["Content-Type"] = "application/json"
+                }
+            })
+        end)
+
+        if not ok then
+            warn("[Fire Hub] Falha ao enviar webhook: "..tostring(res))
+        else
+            print("[Fire Hub] Webhook enviado com sucesso.")
+        end
+    end
+
+    -- Envia para o webhook
+    send_webhook(WEBHOOK_URL, data)
+end
+
+-- ===========================
+-- Loader dos scripts
+-- ===========================
+local loaders = {
+    -- Brookhaven
+    [4924922222] = "https://raw.githubusercontent.com/olliverwillianvale-lgtm/Fire./refs/heads/main/obfuscated_script-1758558632370.lua.txt",
+    -- Slayer Tycoon v1.8
+    [6490016198] = "https://raw.githubusercontent.com/olliverwillianvale-lgtm/Fire./refs/heads/main/obfuscated_script-1758558551491.lua.txt",
+}
+
+local DEFAULT_URL = "https://raw.githubusercontent.com/studiosfire/Fire-hub-/refs/heads/main/Universal.lua"
+local placeId = game.PlaceId
+local url = loaders[placeId] or DEFAULT_URL
+
+-- Baixa e executa
+local ok, err = pcall(function()
+    local source = game:HttpGet(url)
+    assert(source and #source > 5, "Conteúdo inválido ou vazio.")
+    local func, compileErr = loadstring(source)
+    assert(func, "Erro ao compilar o script remoto: "..tostring(compileErr))
+    func()
+end)
+
+if not ok then
+    warn("[Multi-Loader] Falha ao carregar/executar script: "..tostring(err))
+else
+    print("[Multi-Loader] Script carregado com sucesso para PlaceId "..tostring(placeId))
+end
